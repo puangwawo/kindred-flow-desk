@@ -1,1 +1,7 @@
 project_id = "lugjierqzyvlhqcqlfvp"
+
+[functions.notion-transactions]
+verify_jwt = false
+
+[functions.notion-reminders]
+verify_jwt = false
