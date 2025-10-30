@@ -61,6 +61,13 @@ serve(async (req) => {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Notion API error:', response.status, errorData);
+      
+      if (response.status === 404) {
+        throw new Error('Database Notion tidak ditemukan. Pastikan database sudah di-share dengan integration Anda.');
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error('API token tidak valid atau tidak memiliki akses. Cek pengaturan token Anda.');
+      }
+      
       throw new Error(`Notion API error: ${response.status}`);
     }
 
