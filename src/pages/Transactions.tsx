@@ -20,11 +20,13 @@ const Transactions = () => {
 
     const formData = new FormData(e.currentTarget);
     const data = {
+      name: formData.get("name") as string,
       date: formData.get("date") as string,
       amount: parseFloat(formData.get("amount") as string),
       type: formData.get("type") as string,
       category: formData.get("category") as string,
       description: formData.get("description") as string,
+      project: formData.get("project") as string,
     };
 
     try {
@@ -69,6 +71,11 @@ const Transactions = () => {
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Transaksi Baru</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Nama Transaksi</Label>
+              <Input type="text" id="name" name="name" required placeholder="Misal: Gaji Bulanan, Beli Makan" />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="date">Tanggal</Label>
@@ -95,13 +102,38 @@ const Transactions = () => {
               </div>
               <div>
                 <Label htmlFor="category">Kategori</Label>
-                <Input type="text" id="category" name="category" required placeholder="Misal: Gaji, Belanja, dll" />
+                <Select name="category" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kategori" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Makanan">Makanan</SelectItem>
+                    <SelectItem value="Transportasi">Transportasi</SelectItem>
+                    <SelectItem value="Tagihan">Tagihan</SelectItem>
+                    <SelectItem value="Gaji">Gaji</SelectItem>
+                    <SelectItem value="Penjualan">Penjualan</SelectItem>
+                    <SelectItem value="Hiburan">Hiburan</SelectItem>
+                    <SelectItem value="Kesehatan">Kesehatan</SelectItem>
+                    <SelectItem value="Pendidikan">Pendidikan</SelectItem>
+                    <SelectItem value="Peralatan">Peralatan</SelectItem>
+                    <SelectItem value="Rumah Tangga">Rumah Tangga</SelectItem>
+                    <SelectItem value="Donasi">Donasi</SelectItem>
+                    <SelectItem value="Investasi">Investasi</SelectItem>
+                    <SelectItem value="Pajak">Pajak</SelectItem>
+                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div>
               <Label htmlFor="description">Deskripsi</Label>
               <Textarea id="description" name="description" placeholder="Catatan tambahan..." rows={3} />
+            </div>
+
+            <div>
+              <Label htmlFor="project">Proyek Terkait (Opsional)</Label>
+              <Input type="text" id="project" name="project" placeholder="Misal: VA, Bisnis Online" />
             </div>
 
             <div className="flex gap-2 justify-end">

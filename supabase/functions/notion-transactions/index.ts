@@ -17,9 +17,9 @@ serve(async (req) => {
     }
 
     const DATABASE_ID = '08efbd0774044342981e9d04c872a7dd';
-    const { date, amount, type, category, description } = await req.json();
+    const { name, date, amount, type, category, description, project } = await req.json();
 
-    console.log('Adding transaction to Notion:', { date, amount, type, category });
+    console.log('Adding transaction to Notion:', { name, date, amount, type, category });
 
     const response = await fetch(`https://api.notion.com/v1/pages`, {
       method: 'POST',
@@ -31,6 +31,11 @@ serve(async (req) => {
       body: JSON.stringify({
         parent: { database_id: DATABASE_ID },
         properties: {
+          'Nama Transaksi': {
+            title: [{
+              text: { content: name || 'Transaksi' },
+            }],
+          },
           'Tanggal': {
             date: {
               start: date,
@@ -52,6 +57,11 @@ serve(async (req) => {
           'Deskripsi': {
             rich_text: [{
               text: { content: description || '' },
+            }],
+          },
+          'Proyek Terkait': {
+            rich_text: [{
+              text: { content: project || '' },
             }],
           },
         },
