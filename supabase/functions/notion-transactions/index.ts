@@ -45,9 +45,9 @@ serve(async (req) => {
             },
           },
           'Kategori': {
-            rich_text: [{
-              text: { content: category },
-            }],
+            select: {
+              name: category,
+            },
           },
           'Deskripsi': {
             rich_text: [{
