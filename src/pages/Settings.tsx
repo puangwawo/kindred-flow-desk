@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { Settings as SettingsIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Settings as SettingsIcon, AlertCircle } from "lucide-react";
 
 const Settings = () => {
   return (
@@ -8,6 +9,26 @@ const Settings = () => {
         <h1 className="text-4xl font-semibold mb-2">Pengaturan</h1>
         <p className="text-muted-foreground">Konfigurasi dan preferensi aplikasi</p>
       </div>
+
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>⚠️ Penting: Share Database dengan Integration</AlertTitle>
+        <AlertDescription className="space-y-3 mt-2">
+          <p className="font-medium">Agar aplikasi dapat berfungsi, Anda HARUS men-share setiap database Notion dengan integration Anda:</p>
+          <ol className="list-decimal list-inside space-y-2 text-sm">
+            <li>Buka database Notion Anda (klik database di Notion)</li>
+            <li>Klik tombol <strong>"..."</strong> (three dots) di pojok kanan atas</li>
+            <li>Pilih <strong>"+ Add connections"</strong> atau <strong>"Connections"</strong></li>
+            <li>Cari dan pilih integration Anda dari daftar</li>
+            <li>Klik <strong>"Confirm"</strong> untuk memberikan akses</li>
+            <li><strong>Ulangi langkah ini untuk SEMUA 4 database di bawah</strong></li>
+          </ol>
+          <div className="mt-3 p-3 bg-muted rounded-lg">
+            <p className="text-xs font-medium mb-1">💡 Tips:</p>
+            <p className="text-xs">Jika Anda tidak melihat integration Anda di daftar, pastikan Anda sudah membuat integration di <strong>notion.so/my-integrations</strong> dan copy API token-nya.</p>
+          </div>
+        </AlertDescription>
+      </Alert>
 
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-4">
