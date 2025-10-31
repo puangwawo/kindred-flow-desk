@@ -41,8 +41,8 @@ const Transactions = () => {
         description: "Data telah disimpan ke Notion",
       });
 
-      setShowForm(false);
       e.currentTarget.reset();
+      setShowForm(false);
     } catch (error) {
       toast({
         title: "Gagal menambahkan transaksi",
