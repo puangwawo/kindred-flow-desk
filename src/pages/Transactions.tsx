@@ -13,20 +13,23 @@ const Transactions = () => {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [typeValue, setTypeValue] = useState<string>("");
+  const [categoryValue, setCategoryValue] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const formData = new FormData(formEl);
     const data = {
-      name: formData.get("name") as string,
-      date: formData.get("date") as string,
-      amount: parseFloat(formData.get("amount") as string),
-      type: formData.get("type") as string,
-      category: formData.get("category") as string,
-      description: formData.get("description") as string,
-      project: formData.get("project") as string,
+      name: (formData.get("name") as string) ?? "",
+      date: (formData.get("date") as string) ?? "",
+      amount: parseFloat((formData.get("amount") as string) ?? "0"),
+      type: (formData.get("type") as string) ?? "",
+      category: (formData.get("category") as string) ?? "",
+      description: (formData.get("description") as string) ?? "",
+      project: (formData.get("project") as string) ?? "",
     };
 
     try {
@@ -41,7 +44,9 @@ const Transactions = () => {
         description: "Data telah disimpan ke Notion",
       });
 
-      e.currentTarget.reset();
+      formEl.reset();
+      setTypeValue("");
+      setCategoryValue("");
       setShowForm(false);
     } catch (error) {
       toast({
@@ -90,7 +95,7 @@ const Transactions = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="type">Tipe</Label>
-                <Select name="type" required>
+                <Select value={typeValue} onValueChange={setTypeValue}>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih tipe" />
                   </SelectTrigger>
@@ -99,10 +104,11 @@ const Transactions = () => {
                     <SelectItem value="expense">Pengeluaran</SelectItem>
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="type" value={typeValue} />
               </div>
               <div>
                 <Label htmlFor="category">Kategori</Label>
-                <Select name="category" required>
+                <Select value={categoryValue} onValueChange={setCategoryValue}>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
@@ -123,6 +129,7 @@ const Transactions = () => {
                     <SelectItem value="Lainnya">Lainnya</SelectItem>
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="category" value={categoryValue} />
               </div>
             </div>
 
@@ -137,7 +144,7 @@ const Transactions = () => {
             </div>
 
             <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+              <Button type="button" variant="outline" onClick={() => { setShowForm(false); setTypeValue(""); setCategoryValue(""); }}>
                 Batal
               </Button>
               <Button type="submit" disabled={loading}>
