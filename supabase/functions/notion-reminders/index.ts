@@ -23,6 +23,32 @@ serve(async (req) => {
 
     const dateTimeString = `${date}T${time}:00`;
 
+    // First, get the database to find its data sources
+    const dbResponse = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${NOTION_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2025-09-03',
+      },
+    });
+
+    if (!dbResponse.ok) {
+      const errorData = await dbResponse.text();
+      console.error('Notion API error getting database:', dbResponse.status, errorData);
+      throw new Error(`Notion API error: ${dbResponse.status}`);
+    }
+
+    const dbData = await dbResponse.json();
+    const dataSourceId = dbData.data_sources?.[0]?.id;
+
+    if (!dataSourceId) {
+      throw new Error('No data source found for database');
+    }
+
+    console.log('Using data source ID:', dataSourceId);
+
+    // Create page using data source ID
     const response = await fetch(`https://api.notion.com/v1/pages`, {
       method: 'POST',
       headers: {
@@ -31,7 +57,7 @@ serve(async (req) => {
         'Notion-Version': '2025-09-03',
       },
       body: JSON.stringify({
-        parent: { database_id: DATABASE_ID },
+        parent: { data_source_id: dataSourceId },
         properties: {
           'Tanggal & Waktu': {
             date: {
