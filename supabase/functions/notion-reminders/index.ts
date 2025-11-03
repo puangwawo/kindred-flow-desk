@@ -28,7 +28,7 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${NOTION_API_TOKEN}`,
         'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
+        'Notion-Version': '2025-09-03',
       },
       body: JSON.stringify({
         parent: { database_id: DATABASE_ID },
@@ -38,7 +38,7 @@ serve(async (req) => {
               start: dateTimeString,
             },
           },
-          'Judul': {
+          'Name': {
             title: [{
               text: { content: title },
             }],
