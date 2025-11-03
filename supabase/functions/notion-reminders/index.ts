@@ -49,7 +49,9 @@ serve(async (req) => {
             }],
           },
           'Status': {
-            checkbox: false,
+            status: {
+              name: 'Not started'
+            },
           },
         },
       }),
