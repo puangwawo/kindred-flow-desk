@@ -1,19 +1,54 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { DollarSign, Bell, Bot, Sprout, TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
+  const [totalIncome, setTotalIncome] = useState("Rp 0");
+  const [totalExpense, setTotalExpense] = useState("Rp 0");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTransactionSummary();
+  }, []);
+
+  const fetchTransactionSummary = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("notion-fetch-transactions");
+      
+      if (error) throw error;
+      
+      if (data?.transactions) {
+        const income = data.transactions
+          .filter((t: any) => t.type === "Pemasukan")
+          .reduce((sum: number, t: any) => sum + t.amount, 0);
+        
+        const expense = data.transactions
+          .filter((t: any) => t.type === "Pengeluaran")
+          .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+        setTotalIncome(`Rp ${income.toLocaleString("id-ID")}`);
+        setTotalExpense(`Rp ${expense.toLocaleString("id-ID")}`);
+      }
+    } catch (error) {
+      console.error("Error fetching transaction summary:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const stats = [
     {
       title: "Total Pemasukan",
-      value: "Rp 0",
+      value: loading ? "Memuat..." : totalIncome,
       icon: TrendingUp,
       color: "text-success",
       link: "/transactions"
     },
     {
       title: "Total Pengeluaran",
-      value: "Rp 0",
+      value: loading ? "Memuat..." : totalExpense,
       icon: TrendingDown,
       color: "text-destructive",
       link: "/transactions"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,51 @@ import { Plus, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Transaction {
+  id: string;
+  name: string;
+  date: string;
+  amount: number;
+  type: string;
+  category: string;
+  description: string;
+  project: string;
+}
+
 const Transactions = () => {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [typeValue, setTypeValue] = useState<string>("");
   const [categoryValue, setCategoryValue] = useState<string>("");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [fetchingData, setFetchingData] = useState(true);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      setFetchingData(true);
+      const { data, error } = await supabase.functions.invoke("notion-fetch-transactions");
+      
+      if (error) throw error;
+      
+      if (data?.transactions) {
+        setTransactions(data.transactions);
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      toast({
+        title: "Gagal memuat data",
+        description: "Tidak dapat mengambil data transaksi dari Notion",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingData(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -48,6 +87,9 @@ const Transactions = () => {
       setTypeValue("");
       setCategoryValue("");
       setShowForm(false);
+      
+      // Refresh data
+      fetchTransactions();
     } catch (error) {
       toast({
         title: "Gagal menambahkan transaksi",
@@ -113,20 +155,13 @@ const Transactions = () => {
                     <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Makanan">Makanan</SelectItem>
-                    <SelectItem value="Transportasi">Transportasi</SelectItem>
-                    <SelectItem value="Tagihan">Tagihan</SelectItem>
-                    <SelectItem value="Gaji">Gaji</SelectItem>
-                    <SelectItem value="Penjualan">Penjualan</SelectItem>
-                    <SelectItem value="Hiburan">Hiburan</SelectItem>
-                    <SelectItem value="Kesehatan">Kesehatan</SelectItem>
-                    <SelectItem value="Pendidikan">Pendidikan</SelectItem>
-                    <SelectItem value="Peralatan">Peralatan</SelectItem>
-                    <SelectItem value="Rumah Tangga">Rumah Tangga</SelectItem>
-                    <SelectItem value="Donasi">Donasi</SelectItem>
-                    <SelectItem value="Investasi">Investasi</SelectItem>
-                    <SelectItem value="Pajak">Pajak</SelectItem>
-                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                    <SelectItem value="OBR">OBR</SelectItem>
+                    <SelectItem value="OBA">OBA</SelectItem>
+                    <SelectItem value="OBB">OBB</SelectItem>
+                    <SelectItem value="OBS">OBS</SelectItem>
+                    <SelectItem value="BBU">BBU</SelectItem>
+                    <SelectItem value="Home">Home</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
                   </SelectContent>
                 </Select>
                 <input type="hidden" name="category" value={categoryValue} />
@@ -161,8 +196,13 @@ const Transactions = () => {
             <TrendingUp className="text-success" size={24} />
             <h3 className="text-lg font-semibold">Total Pemasukan</h3>
           </div>
-          <p className="text-3xl font-semibold">Rp 0</p>
-          <p className="text-sm text-muted-foreground mt-1">Bulan ini</p>
+          <p className="text-3xl font-semibold">
+            {fetchingData ? "Memuat..." : `Rp ${transactions
+              .filter(t => t.type === "Pemasukan")
+              .reduce((sum, t) => sum + t.amount, 0)
+              .toLocaleString("id-ID")}`}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">Total</p>
         </Card>
 
         <Card className="p-6">
@@ -170,14 +210,58 @@ const Transactions = () => {
             <TrendingDown className="text-destructive" size={24} />
             <h3 className="text-lg font-semibold">Total Pengeluaran</h3>
           </div>
-          <p className="text-3xl font-semibold">Rp 0</p>
-          <p className="text-sm text-muted-foreground mt-1">Bulan ini</p>
+          <p className="text-3xl font-semibold">
+            {fetchingData ? "Memuat..." : `Rp ${transactions
+              .filter(t => t.type === "Pengeluaran")
+              .reduce((sum, t) => sum + t.amount, 0)
+              .toLocaleString("id-ID")}`}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">Total</p>
         </Card>
       </div>
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Riwayat Transaksi</h2>
-        <p className="text-muted-foreground">Belum ada transaksi. Mulai tambahkan transaksi pertama Anda.</p>
+        {fetchingData ? (
+          <p className="text-muted-foreground">Memuat data...</p>
+        ) : transactions.length === 0 ? (
+          <p className="text-muted-foreground">Belum ada transaksi. Mulai tambahkan transaksi pertama Anda.</p>
+        ) : (
+          <div className="space-y-3">
+            {transactions.map((transaction) => (
+              <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${transaction.type === "Pemasukan" ? "bg-success/10" : "bg-destructive/10"}`}>
+                      {transaction.type === "Pemasukan" ? (
+                        <TrendingUp className="text-success" size={20} />
+                      ) : (
+                        <TrendingDown className="text-destructive" size={20} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold">{transaction.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {transaction.category} • {new Date(transaction.date).toLocaleDateString("id-ID")}
+                      </p>
+                      {transaction.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{transaction.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`text-lg font-semibold ${transaction.type === "Pemasukan" ? "text-success" : "text-destructive"}`}>
+                    {transaction.type === "Pemasukan" ? "+" : "-"}Rp {transaction.amount.toLocaleString("id-ID")}
+                  </p>
+                  {transaction.project && (
+                    <p className="text-sm text-muted-foreground">{transaction.project}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

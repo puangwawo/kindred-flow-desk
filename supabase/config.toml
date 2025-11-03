@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.notion-reminders]
 verify_jwt = false
+
+[functions.notion-fetch-transactions]
+verify_jwt = false
