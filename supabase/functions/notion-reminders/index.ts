@@ -50,7 +50,7 @@ serve(async (req) => {
           },
           'Status': {
             status: {
-              name: 'Not started'
+              name: 'In progress'
             },
           },
         },
