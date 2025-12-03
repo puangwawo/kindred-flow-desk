@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, TrendingUp, TrendingDown, Filter, X } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Filter, X, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Transaction {
   id: string;
@@ -21,17 +22,24 @@ interface Transaction {
   project: string;
 }
 
+// Get current month in YYYY-MM format
+const getCurrentMonth = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
 const Transactions = () => {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [typeValue, setTypeValue] = useState<string>("");
   const [categoryValue, setCategoryValue] = useState<string>("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fetchingData, setFetchingData] = useState(true);
   
-  // Filter states
-  const [filterMonth, setFilterMonth] = useState<string>("");
+  // Filter states - default to current month
+  const [filterMonth, setFilterMonth] = useState<string>(getCurrentMonth());
   const [filterStartDate, setFilterStartDate] = useState<string>("");
   const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [filterCategory, setFilterCategory] = useState<string>("");
@@ -119,6 +127,33 @@ const Transactions = () => {
     setFilterStartDate("");
     setFilterEndDate("");
     setFilterCategory("");
+  };
+
+  const handleDelete = async (transactionId: string) => {
+    setDeleting(transactionId);
+    try {
+      const { error } = await supabase.functions.invoke("notion-delete-transaction", {
+        body: { pageId: transactionId },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Transaksi berhasil dihapus",
+        description: "Data telah dihapus dari Notion",
+      });
+
+      // Remove from local state
+      setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    } catch (error) {
+      toast({
+        title: "Gagal menghapus transaksi",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -396,13 +431,36 @@ const Transactions = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-semibold ${transaction.type === "Pemasukan" ? "text-success" : "text-destructive"}`}>
-                      {transaction.type === "Pemasukan" ? "+" : "-"}Rp {transaction.amount.toLocaleString("id-ID")}
-                    </p>
-                    {transaction.project && (
-                      <p className="text-sm text-muted-foreground">{transaction.project}</p>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className={`text-lg font-semibold ${transaction.type === "Pemasukan" ? "text-success" : "text-destructive"}`}>
+                        {transaction.type === "Pemasukan" ? "+" : "-"}Rp {transaction.amount.toLocaleString("id-ID")}
+                      </p>
+                      {transaction.project && (
+                        <p className="text-sm text-muted-foreground">{transaction.project}</p>
+                      )}
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" disabled={deleting === transaction.id}>
+                          <Trash2 size={18} />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus transaksi "{transaction.name}"? Tindakan ini tidak dapat dibatalkan.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(transaction.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Hapus
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
@@ -446,9 +504,32 @@ const Transactions = () => {
                             </div>
                           </div>
                         </div>
-                        <p className={`text-sm font-semibold ${transaction.type === "Pemasukan" ? "text-success" : "text-destructive"}`}>
-                          {transaction.type === "Pemasukan" ? "+" : "-"}Rp {transaction.amount.toLocaleString("id-ID")}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-sm font-semibold ${transaction.type === "Pemasukan" ? "text-success" : "text-destructive"}`}>
+                            {transaction.type === "Pemasukan" ? "+" : "-"}Rp {transaction.amount.toLocaleString("id-ID")}
+                          </p>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={deleting === transaction.id}>
+                                <Trash2 size={14} />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Apakah Anda yakin ingin menghapus transaksi "{transaction.name}"?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(transaction.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Hapus
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -475,9 +556,32 @@ const Transactions = () => {
                         {transaction.category} • {new Date(transaction.date).toLocaleDateString("id-ID")}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-success">
-                      +Rp {transaction.amount.toLocaleString("id-ID")}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-success">
+                        +Rp {transaction.amount.toLocaleString("id-ID")}
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={deleting === transaction.id}>
+                            <Trash2 size={14} />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Apakah Anda yakin ingin menghapus transaksi "{transaction.name}"?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(transaction.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Hapus
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -500,9 +604,32 @@ const Transactions = () => {
                         {transaction.category} • {new Date(transaction.date).toLocaleDateString("id-ID")}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-destructive">
-                      -Rp {transaction.amount.toLocaleString("id-ID")}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-destructive">
+                        -Rp {transaction.amount.toLocaleString("id-ID")}
+                      </p>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={deleting === transaction.id}>
+                            <Trash2 size={14} />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Apakah Anda yakin ingin menghapus transaksi "{transaction.name}"?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(transaction.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Hapus
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 ))}
               </div>
