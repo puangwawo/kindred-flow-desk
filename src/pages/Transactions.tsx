@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, TrendingUp, TrendingDown, Filter, X, Trash2 } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Filter, X, Trash2, Scale } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -356,7 +356,7 @@ const Transactions = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <TrendingUp className="text-success" size={24} />
@@ -387,6 +387,34 @@ const Transactions = () => {
           <p className="text-sm text-muted-foreground mt-1">
             {filterMonth || filterStartDate || filterEndDate || filterCategory ? "Terfilter" : "Total"}
           </p>
+        </Card>
+
+        <Card className="p-6">
+          {(() => {
+            const totalIncome = filteredTransactions
+              .filter(t => t.type === "Pemasukan")
+              .reduce((sum, t) => sum + t.amount, 0);
+            const totalExpense = filteredTransactions
+              .filter(t => t.type === "Pengeluaran")
+              .reduce((sum, t) => sum + t.amount, 0);
+            const balance = totalIncome - totalExpense;
+            const isProfit = balance >= 0;
+            
+            return (
+              <>
+                <div className="flex items-center gap-3 mb-2">
+                  <Scale className={isProfit ? "text-success" : "text-destructive"} size={24} />
+                  <h3 className="text-lg font-semibold">P/L (Balance)</h3>
+                </div>
+                <p className={`text-3xl font-semibold ${isProfit ? "text-success" : "text-destructive"}`}>
+                  {fetchingData ? "Memuat..." : `${isProfit ? "+" : ""}Rp ${balance.toLocaleString("id-ID")}`}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isProfit ? "Profit" : "Loss"}
+                </p>
+              </>
+            );
+          })()}
         </Card>
       </div>
 
