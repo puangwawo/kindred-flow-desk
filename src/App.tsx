@@ -7,8 +7,6 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Reminders from "./pages/Reminders";
-import BotStatus from "./pages/BotStatus";
-import VirtualFarm from "./pages/VirtualFarm";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -25,8 +23,6 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/reminders" element={<Reminders />} />
-            <Route path="/bots" element={<BotStatus />} />
-            <Route path="/farm" element={<VirtualFarm />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
