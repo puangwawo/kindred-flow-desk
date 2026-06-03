@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, DollarSign, Bell, Bot, Sprout, Settings } from "lucide-react";
+import { Home, DollarSign, Bell, Settings } from "lucide-react";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
@@ -8,8 +8,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { path: "/", icon: Home, label: "Dashboard" },
     { path: "/transactions", icon: DollarSign, label: "Transaksi" },
     { path: "/reminders", icon: Bell, label: "Reminder" },
-    { path: "/bots", icon: Bot, label: "Bot Status" },
-    { path: "/farm", icon: Sprout, label: "Virtual Farm" },
     { path: "/settings", icon: Settings, label: "Pengaturan" },
   ];
 
