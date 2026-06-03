@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { DollarSign, Bell, Bot, Sprout, TrendingUp, TrendingDown } from "lucide-react";
+import { DollarSign, Bell, TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,13 +60,6 @@ const Dashboard = () => {
       color: "text-accent",
       link: "/reminders"
     },
-    {
-      title: "Bot Running",
-      value: "0",
-      icon: Bot,
-      color: "text-success",
-      link: "/bots"
-    },
   ];
 
   return (
@@ -76,7 +69,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Ringkasan aktivitas virtual assistant Anda</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -117,28 +110,6 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Belum ada reminder. Tambahkan reminder untuk tetap terorganisir.</p>
           <Link to="/reminders" className="mt-4 inline-block text-accent hover:underline">
             Lihat semua reminder →
-          </Link>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Bot className="text-accent" size={24} />
-            <h2 className="text-xl font-semibold">Status Bot</h2>
-          </div>
-          <p className="text-muted-foreground">Monitor status semua bot trading Anda di sini.</p>
-          <Link to="/bots" className="mt-4 inline-block text-accent hover:underline">
-            Lihat status bot →
-          </Link>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Sprout className="text-accent" size={24} />
-            <h2 className="text-xl font-semibold">Virtual Farm Timeline</h2>
-          </div>
-          <p className="text-muted-foreground">Lacak progres proyek pertanian organik Anda.</p>
-          <Link to="/farm" className="mt-4 inline-block text-accent hover:underline">
-            Lihat timeline →
           </Link>
         </Card>
       </div>
