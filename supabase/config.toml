@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.notion-fetch-transactions]
 verify_jwt = false
+
+[functions.notion-fetch-reminders]
+verify_jwt = false

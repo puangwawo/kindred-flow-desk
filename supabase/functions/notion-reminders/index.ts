@@ -5,94 +5,74 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const SPREADSHEET_ID = '10u7hcfcZX94PXRRR3GSxLOvnMoMSQY84bCNLssxY8Is';
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_sheets/v4';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const NOTION_API_TOKEN = Deno.env.get('NOTION_API_TOKEN');
-    if (!NOTION_API_TOKEN) {
-      throw new Error('NOTION_API_TOKEN is not configured');
-    }
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const GOOGLE_SHEETS_API_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY');
+    const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
+    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
+    if (!GOOGLE_SHEETS_API_KEY) throw new Error('GOOGLE_SHEETS_API_KEY is not configured');
+    if (!TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN is not configured');
+    if (!TELEGRAM_CHAT_ID) throw new Error('TELEGRAM_CHAT_ID is not configured');
 
-    const DATABASE_ID = 'e885eabb7fb54576b76ae83abe7552cb';
     const { date, time, title, notes } = await req.json();
+    const id = crypto.randomUUID();
+    const row = [id, date || '', time || '', title || '', notes || '', 'pending'];
 
-    console.log('Adding reminder to Notion:', { date, time, title });
-
-    const dateTimeString = `${date}T${time}:00`;
-
-    // First, get the database to find its data sources
-    const dbResponse = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2025-09-03',
-      },
-    });
-
-    if (!dbResponse.ok) {
-      const errorData = await dbResponse.text();
-      console.error('Notion API error getting database:', dbResponse.status, errorData);
-      throw new Error(`Notion API error: ${dbResponse.status}`);
-    }
-
-    const dbData = await dbResponse.json();
-    const dataSourceId = dbData.data_sources?.[0]?.id;
-
-    if (!dataSourceId) {
-      throw new Error('No data source found for database');
-    }
-
-    console.log('Using data source ID:', dataSourceId);
-
-    // Create page using data source ID
-    const response = await fetch(`https://api.notion.com/v1/pages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2025-09-03',
-      },
-      body: JSON.stringify({
-        parent: { data_source_id: dataSourceId },
-        properties: {
-          'Tanggal & Waktu': {
-            date: {
-              start: dateTimeString,
-            },
-          },
-          'Name': {
-            title: [{
-              text: { content: title },
-            }],
-          },
-          'Catatan': {
-            rich_text: [{
-              text: { content: notes || '' },
-            }],
-          },
-          'Status': {
-            status: {
-              name: 'In progress'
-            },
-          },
+    // Append to Reminders sheet
+    const sheetRes = await fetch(
+      `${GATEWAY_URL}/spreadsheets/${SPREADSHEET_ID}/values/Reminders!A:F:append?valueInputOption=USER_ENTERED`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'X-Connection-Api-Key': GOOGLE_SHEETS_API_KEY,
+          'Content-Type': 'application/json',
         },
-      }),
-    });
+        body: JSON.stringify({ values: [row] }),
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Notion API error:', response.status, errorData);
-      throw new Error(`Notion API error: ${response.status}`);
+    if (!sheetRes.ok) {
+      const err = await sheetRes.text();
+      console.error('Sheets error:', sheetRes.status, err);
+      throw new Error(`Google Sheets error: ${sheetRes.status}`);
     }
 
-    const data = await response.json();
-    console.log('Reminder added successfully:', data.id);
+    // Send Telegram notification
+    const message =
+      `🔔 <b>Reminder Baru</b>\n\n` +
+      `<b>${title}</b>\n` +
+      `📅 ${date} ⏰ ${time}\n` +
+      (notes ? `\n📝 ${notes}` : '');
 
-    return new Response(JSON.stringify({ success: true, id: data.id }), {
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML',
+        }),
+      }
+    );
+
+    if (!tgRes.ok) {
+      const err = await tgRes.text();
+      console.error('Telegram error:', tgRes.status, err);
+    }
+
+    return new Response(JSON.stringify({ success: true, id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
